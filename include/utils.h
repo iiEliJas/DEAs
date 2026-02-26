@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// Print a 64-bit value as binary, grouped into bytes
+// Print a 64-bit value as binary
 void printbin(uint64_t num);
 
 // Print a block array as hex
