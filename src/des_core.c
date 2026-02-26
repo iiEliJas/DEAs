@@ -3,7 +3,6 @@
 
 
 
-
 static uint64_t leftShift28(uint32_t num, int n){
     return ((num<<n) | (num>>(28-n))) & 0x0FFFFFFF; 
 }
@@ -103,4 +102,94 @@ uint64_t des_decrypt(const uint64_t cipher, uint64_t subkeys[16]){
     uint64_t final = ((uint64_t)R << 32) | (uint64_t)L;
     return permutate(final, FP, 64, 64);
 }
+
+
+
+
+// ECB — Electronic Codebook
+//
+// Every block is encrypted independently with the same key
+// subkeyGen is called once; the same subkeys are reused for every block
+//
+void des_ecb_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key) {
+    uint64_t subkeys[16];
+    subkeyGen(key, subkeys);
+    for (size_t i = 0; i < num_blocks; i++)
+        out[i] = des_encrypt(in[i], subkeys);
+}
+
+void des_ecb_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key) {
+    uint64_t subkeys[16];
+    subkeyGen(key, subkeys);
+    for (size_t i = 0; i < num_blocks; i++)
+        out[i] = des_decrypt(in[i], subkeys);
+}
+
+
+
+
+
+// CBC — Cipher Block Chaining
+//
+// Encrypt: ciphertext[i] = DES_enc(plaintext[i] XOR prev_cipher)
+// prev_cipher starts as the IV, then becomes ciphertext[i-1]
+// 
+// Decrypt: plaintext[i] = DES_dec(ciphertext[i]) XOR prev_cipher
+//
+void des_cbc_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t iv) {
+    uint64_t subkeys[16];
+    subkeyGen(key, subkeys);
+
+    uint64_t prev = iv;
+    for (size_t i = 0; i < num_blocks; i++) {
+        out[i] = des_encrypt(in[i] ^ prev, subkeys);
+        prev   = out[i];
+    }
+}
+
+void des_cbc_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t iv) {
+    uint64_t subkeys[16];
+    subkeyGen(key, subkeys);
+
+    uint64_t prev = iv;
+    for (size_t i = 0; i < num_blocks; i++) {
+        uint64_t tmp = in[i];  
+        out[i] = des_decrypt(in[i], subkeys) ^ prev;
+        prev   = tmp;
+    }
+}
+
+
+
+
+
+// CTR — Counter Mode
+// 
+// Turns DES into a stream cipher:
+// keystream[i] = DES_enc(nonce XOR i)
+// ciphertext[i] = plaintext[i] XOR keystream[i]
+// 
+// Encryption and decryption are identical 
+// No padding needed. Blocks can be processed in parallel
+//
+static void des_ctr(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t nonce) {
+    uint64_t subkeys[16];
+    subkeyGen(key, subkeys);
+
+    for (size_t i = 0; i < num_blocks; i++) {
+        uint64_t counter_block = nonce ^ (uint64_t)i;
+        uint64_t keystream     = des_encrypt(counter_block, subkeys);
+        out[i] = in[i] ^ keystream;
+    }
+}
+
+void des_ctr_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t nonce) {
+    des_ctr(in, out, num_blocks, key, nonce);
+}
+
+void des_ctr_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t nonce) {
+    des_ctr(in, out, num_blocks, key, nonce);
+}
+
+
 

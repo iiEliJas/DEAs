@@ -2,6 +2,7 @@
 #define DES_CORE
 
 #include <stdint.h>
+#include <stddef.h>
 
 
 // Bit permutation
@@ -40,6 +41,36 @@ uint64_t des_encrypt(const uint64_t message, uint64_t subkeys[16]);
 // reverse of des_encrypt
 //
 uint64_t des_decrypt(const uint64_t cipher, uint64_t subkeys[16]);
+
+
+
+//////////////////////////////////////////////////////////////////////////
+///                          MODES
+///
+
+
+//ECB — Electronic Codebook
+//Each block is encrypted independently with the same key
+//
+void des_ecb_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key);
+void des_ecb_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key);
+
+
+
+//CBC — Cipher Block Chaining
+//Each plaintext block is XORed with the previous ciphertext block before encryption
+//
+void des_cbc_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t iv);
+void des_cbc_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t iv);
+
+
+
+//CTR — Counter Mode
+//Encrypts a nonce||counter value and XORs the result with plaintext
+//
+void des_ctr_encrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t nonce);
+void des_ctr_decrypt(const uint64_t *in, uint64_t *out, size_t num_blocks, uint64_t key, uint64_t nonce);
+
 
 
 #endif
