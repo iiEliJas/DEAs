@@ -28,79 +28,295 @@ uint8_t rcon[10] = {
 };
 
 
-void print128hex(const char *title, const uint8_t num[4][4]){
+
+/////////////////////////////////////////////////////////////////////////
+///                 DEBUGGING TOOLS
+///
+void printKey(const char *title, const uint32_t num[4]){
     printf("%s: ", title);
     for(int i=0; i<4; i++){
+        printf(" %08x ", num[i]);
+    }
+    printf("\n");
+}
+
+
+// Prints the state correctly (in rows not in columns)
+//
+void printState(const char *title, const uint8_t num[16]){
+    printf("%s: \n", title);
+    for(int i=0; i<4; i++){
         for(int j=0; j<4; j++){
-            printf(" %x ", num[i][j]);
+            printf(" %02x ", num[i+j*4]);
         }
+        printf("\n");
     }
     printf("\n");
 }
 
-
-void printWord(const uint8_t word[4]){
-    for(int i=0; i<4; i++){
-        printf(" %x ", word[i]);
-    }
-    printf("\n");
-}
-
-
-
-
-
-void getWord(const uint8_t key[4][4], uint8_t word[4], int index){
-    for(int i=0; i<4; i++){
-       word[i] = key[i][index]; 
+// turns a flat uint8_t key into the a 32 int array with words
+//
+void bytesToWords(const uint8_t bytes[16], uint32_t words[4]) {
+    for (int i = 0; i < 4; i++) {
+        words[i] =  ((uint32_t)bytes[i*4+0] << 24) |
+                    ((uint32_t)bytes[i*4+1] << 16) |
+                    ((uint32_t)bytes[i*4+2] <<  8) |
+                     (uint32_t)bytes[i*4+3];
     }
 }
 
 
 
+////////////////////////////////////////////////////////////////////////////
+///                 AES functions
 
 
-void keywordsGen(const uint8_t key[4][4], uint8_t keys[11][4][4]){
-
-    memcpy(keys[0], key, sizeof(keys[0]));
+// generates all 43 words and puts them into the subkey array
+void aes_subkeyGen(const uint32_t key[4], uint32_t subkeys[11][4]){
+    
+    memcpy(subkeys[0], key, sizeof(subkeys[0]));
 
     for(int round=1; round<11; round++){
-        keys[round][0][0] = keys[round-1][0][0] ^ (sbox[keys[round-1][1][3]] ^ rcon[round-1]);
-        keys[round][1][0] = keys[round-1][1][0] ^ (sbox[keys[round-1][2][3]]);
-        keys[round][2][0] = keys[round-1][2][0] ^ (sbox[keys[round-1][3][3]]);
-        keys[round][3][0] = keys[round-1][3][0] ^ (sbox[keys[round-1][0][3]]);
+        uint32_t g = subkeys[round-1][3];
+        g = (g << 8) | (g >> 24);   // Left shift
+        g = ((uint32_t)sbox[(g >> 24) & 0xFF]) << 24    |
+            ((uint32_t)sbox[(g >> 16) & 0xFF]) << 16    |       // put each byte into the sbox
+            ((uint32_t)sbox[(g >> 8) & 0xFF]) << 8      |
+            (uint32_t)(sbox[g & 0xFF]);    
+        g ^= (uint32_t)(rcon[round-1]) << 24;        
 
-        for(int w=1; w<4; w++){
-            for(int col=0; col<4; col++){
-                keys[round][col][w] = keys[round-1][col][w] ^ keys[round][col][w-1];
-            }
+        for(int i=0; i<4; i++){
+            subkeys[round][i] = subkeys[round-1][i] ^ g;
+            g = subkeys[round][i];
         }
     }
 }
 
 
 
+// XOR key and state 
+//
+static void AddRoundKey(uint8_t state[16], const uint32_t subkey[4]){
+    for(int col=0; col<4; col++){
+        for(int byte=0; byte<4; byte++){
+            state[col*4+byte] ^= (subkey[col] >> (24-byte*8)) & 0xFF;
+        }
+    }
+}
 
+
+// SBOX substitution
+//
+static void ByteSub(uint8_t state[16]){
+    for(int i=0; i<16; i++){
+        state[i] = sbox[state[i]];
+    }
+}
+
+
+// Cyclical left shift
+// 1st row: no change
+// 2nd row: 1 byte
+// 3rd row: 2 bytes
+// 4th row: 3 bytes
+static void ShiftRows(uint8_t state[16]){
+    for(int i=1; i<4; i++){
+        uint8_t temp[4] = { state[i], state[i+4], state[i+8], state[i+12] };    // temporarly store the row
+
+        for(int j=0; j<4; j++){
+            int sub_i = i + ((4+j-i)%4)*4;  // new substitution index
+
+            state[sub_i] = temp[j]; 
+        }
+    }
+}
+
+
+
+static void MixCol(uint8_t state[16]){
+    for (int col = 0; col < 4; col++) {
+        uint8_t s0 = state[col*4+0];
+        uint8_t s1 = state[col*4+1];
+        uint8_t s2 = state[col*4+2];
+        uint8_t s3 = state[col*4+3];
+
+        uint8_t x0 = (s0<<1) ^ ((s0>>7) ? 0x1b : 0x00);
+        uint8_t x1 = (s1<<1) ^ ((s1>>7) ? 0x1b : 0x00);
+        uint8_t x2 = (s2<<1) ^ ((s2>>7) ? 0x1b : 0x00);
+        uint8_t x3 = (s3<<1) ^ ((s3>>7) ? 0x1b : 0x00);
+
+        state[col*4+0] = x0 ^ (x1^s1) ^ s2 ^ s3;
+        state[col*4+1] = s0 ^ x1 ^ (x2^s2) ^ s3;
+        state[col*4+2] = s0 ^ s1 ^ x2 ^ (x3^s3);
+        state[col*4+3] = (x0^s0) ^ s1 ^ s2 ^ x3;
+        
+    }
+}
+
+
+// AES 128 bit key encryption
+//
+void aes_encrypt(const uint8_t in[16], uint8_t out[16], const uint32_t subkeys[11][4]){
+    memcpy(out, in, 16);
+
+    AddRoundKey(out, subkeys[0]); // Before round 1
+
+    for(int i=0; i<10; i++){
+        ByteSub(out);
+        ShiftRows(out);
+        if(i!=9) MixCol(out);   // not in round 10
+        AddRoundKey(out, subkeys[i+1]);
+
+        // Debugging
+        printf("Round %d", i+1);
+        printState("", out);
+    }
+}
 
 
 
 int main(void){
-    const uint8_t key[4][4] = {{ 0x73, 0x73, 0x69, 0x72 },
-                               { 0x61, 0x68, 0x73, 0x69 },
-                               { 0x74, 0x63, 0x62, 0x6e },
-                               { 0x69, 0x6a, 0x6f, 0x67 }};
+    //////////////////////////////
+    /// key and message
+    uint8_t raw_key[16] = {
+            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+            0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+    };
 
-    print128hex("KEY", key);
+    uint8_t message[16] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};
+    uint8_t cipher[16];
 
     
-    uint8_t keys[11][4][4];
+    //////////////////////////////
+    // Generate subkeys 
+    //
+    uint32_t key[4];
+    bytesToWords(raw_key, key);
 
-    keywordsGen(key, keys);
+    printKey("KEY", key);
 
-    print128hex("Word 1", keys[1]);
-    
+    uint32_t subkeys[11][4];
+    aes_subkeyGen(key, subkeys);
+
+      // Print all subkeys
+    for(int i=0; i<11; i++){
+        printf("\nSubkey %d", i);
+        printKey(" ", subkeys[i]);
+        
+    }
+   
+
+    //////////////////////////////
+    /// Encrypt
+    /// 
+    printState("Message", message);
+    aes_encrypt(message, cipher, subkeys);
+    printState("Cipher", cipher);
+
     return 0;
 }
 
 
 
+//////////// TEST ////////////////////////////
+/*
+    This is a test encryption. The solutions can be compared to the official FIPS 197 document [Appendix B]
+
+
+KEY:  2b7e1516  28aed2a6  abf71588  09cf4f3c
+
+Subkey 0 :  2b7e1516  28aed2a6  abf71588  09cf4f3c
+
+Subkey 1 :  a0fafe17  88542cb1  23a33939  2a6c7605
+
+Subkey 2 :  f2c295f2  7a96b943  5935807a  7359f67f
+
+Subkey 3 :  3d80477d  4716fe3e  1e237e44  6d7a883b
+
+Subkey 4 :  ef44a541  a8525b7f  b671253b  db0bad00
+
+Subkey 5 :  d4d1c6f8  7c839d87  caf2b8bc  11f915bc
+
+Subkey 6 :  6d88a37a  110b3efd  dbf98641  ca0093fd
+
+Subkey 7 :  4e54f70e  5f5fc9f3  84a64fb2  4ea6dc4f
+
+Subkey 8 :  ead27321  b58dbad2  312bf560  7f8d292f
+
+Subkey 9 :  ac7766f3  19fadc21  28d12941  575c006e
+
+Subkey 10 :  d014f9a8  c9ee2589  e13f0cc8  b6630ca6
+
+
+Message:
+ 32  88  31  e0
+ 43  5a  31  37
+ f6  30  98  07
+ a8  8d  a2  34
+
+Round 1:
+ a4  68  6b  02
+ 9c  9f  5b  6a
+ 7f  35  ea  50
+ f2  2b  43  49
+
+Round 2:
+ aa  61  82  68
+ 8f  dd  d2  32
+ 5f  e3  4a  46
+ 03  ef  d2  9a
+
+Round 3:
+ 48  67  4d  d6
+ 6c  1d  e3  5f
+ 4e  9d  b1  58
+ ee  0d  38  e7
+
+Round 4:
+ e0  c8  d9  85
+ 92  63  b1  b8
+ 7f  63  35  be
+ e8  c0  50  01
+
+Round 5:
+ f1  c1  7c  5d
+ 00  92  c8  b5
+ 6f  4c  8b  d5
+ 55  ef  32  0c
+
+Round 6:
+ 26  3d  e8  fd
+ 0e  41  64  d2
+ 2e  b7  72  8b
+ 17  7d  a9  25
+
+Round 7:
+ 5a  19  a3  7a
+ 41  49  e0  8c
+ 42  dc  19  04
+ b1  1f  65  0c
+
+Round 8:
+ ea  04  65  85
+ 83  45  5d  96
+ 5c  33  98  b0
+ f0  2d  ad  c5
+
+Round 9:
+ eb  59  8b  1b
+ 40  2e  a1  c3
+ f2  38  13  42
+ 1e  84  e7  d2
+
+Round 10:
+ 39  02  dc  19
+ 25  dc  11  6a
+ 84  09  85  0b
+ 1d  fb  97  32
+
+Cipher:
+ 39  02  dc  19
+ 25  dc  11  6a
+ 84  09  85  0b
+ 1d  fb  97  32
+*/
