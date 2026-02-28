@@ -1,3 +1,2 @@
-# Ignore bin dir
-bin/
+*.o
 *.exe
