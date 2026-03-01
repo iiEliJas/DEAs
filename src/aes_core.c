@@ -147,7 +147,7 @@ void aes_keyexpansion(const uint32_t *key, uint32_t *words, int Nk){
 
 
 // Init function ... setup for aes_encrypt
-// takes in  AES_Ctx pointer wich must be passed into aes_encrypt
+// takes in  AES_Ctx pointer which will be passed into aes_encrypt
 //
 void aes_init(const uint8_t *key, AES_KEYSIZE keysize, AES_Ctx *ctx){
     int Nk = (int)keysize;

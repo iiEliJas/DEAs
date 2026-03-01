@@ -2,6 +2,8 @@
 
 A clean, from-scratch implementation of classic and modern encryption algorithms in C. Built without external libraries — every algorithm is implemented directly from the official specifications.
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![C](https://img.shields.io/badge/language-C-00599C?logo=c)
 ---
 
 ## Algorithms
@@ -92,7 +94,7 @@ aes_encrypt(plaintext, ciphertext, &ctx);
 | `AES_192` | 24 bytes |
 | `AES_256` | 32 bytes |
 
-> **Note:** The state array is column-major, matching the AES spec (FIPS 197). Plaintext bytes are loaded column by column into the 4×4 state matrix.
+> **Note:** The state array is column-major, matching the AES spec (FIPS 197). 
 
 ---
 
@@ -137,7 +139,7 @@ des_ctr_decrypt(ciphertext, decrypted, 3, key, nonce);
 ## References
 
 - [FIPS 197 — AES Specification](https://csrc.nist.gov/publications/detail/fips/197/final)
-- [FIPS 46-3 — DES Specification](https://csrc.nist.gov/publications/detail/fips/46/3/final)
+- [FIPS 46-3 — DES Specification](https://csrc.nist.gov/pubs/fips/46-3/final)
 
 ---
 
