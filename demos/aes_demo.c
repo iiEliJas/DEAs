@@ -13,6 +13,7 @@ int main(void){
     };
     uint8_t message[16] = {0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34};
     uint8_t cipher[16];
+    uint8_t decrypted[16];
 
     
     //////////////////////////////
@@ -28,7 +29,8 @@ int main(void){
     printAES_state("Message", message);
     aes_encrypt(message, cipher, &ctx);
     printAES_state("Cipher", cipher);
-
+    aes_decrypt(cipher, decrypted, &ctx);
+    printAES_state("Decrypted", decrypted);
 
     return 0;
 }

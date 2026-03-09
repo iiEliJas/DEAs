@@ -80,10 +80,12 @@ AES_Ctx ctx;
 aes_init(&ctx, key, AES_256);   // AES_128, AES_192, or AES_256
 
 // 3. Encrypt a 16-byte block
-uint8_t plaintext[16]  = { /* your data */ };
-uint8_t ciphertext[16];
+uint8_t message[16]  = { /* ... */ };
+uint8_t cipher[16];
+uint8_t decrypted[16];
 
-aes_encrypt(plaintext, ciphertext, &ctx);
+aes_encrypt(message, cipher, &ctx);
+aes_decrypt(cipher, decrypted, &ctx);
 ```
 
 **Key size options:**

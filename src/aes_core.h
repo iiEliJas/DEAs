@@ -48,4 +48,12 @@ void aes_init(const uint8_t *key, AES_KEYSIZE keysize, AES_Ctx *ctx);
 void aes_encrypt(const uint8_t in[16], uint8_t out[16], const AES_Ctx *ctx);
 
 
+
+
+// AES key decryption 
+// takes in a cipher (in) and outputs the encrypted message (out)
+// AES_Ctx must be initialized beforehand
+//
+void aes_decrypt(const uint8_t in[16], uint8_t out[16], const AES_Ctx *ctx);
+
 #endif
