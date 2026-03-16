@@ -4,6 +4,7 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![C](https://img.shields.io/badge/language-C-00599C?logo=c)
+[![CI](https://github.com/iiEliJas/DEAs/actions/workflows/ci.yml/badge.svg)](https://github.com/iiEliJas/DEAs/actions/workflows/ci.yml)
 ---
 
 ## Algorithms
@@ -22,16 +23,20 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 ```
 DEAs/
 ├── src/
-│   ├── aes_core.c
-│   ├── aes_core.h
-│   ├── des_core.c
-│   ├── des_core.h
+│   ├── aes_core.c / aes_core.h
+│   └── des_core.c / des_core.h
 ├── utils/
 │   ├── utils.c
 │   └── utils.h
 ├── demos/
 │   ├── aes_demo.c
 │   └── des_demo.c
+├── tests/
+│   ├── aes_test.c
+│   └── des_test.c
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── Makefile
 └── README.md
 ```
@@ -52,7 +57,7 @@ make aes
 # Build only DES demo
 make des
 
-# Clean build artifacts
+# Clean build
 make clean
 ```
 
@@ -144,6 +149,18 @@ des_ctr_decrypt(cipher, decrypted, 3, key, nonce);
 | CBC | IV (64-bit) | Each block XORed with previous ciphertext before encryption |
 | CTR | Nonce (64-bit) | Turns DES into a stream cipher; encrypt and decrypt use the same function |
 
+---
+
+## Testing
+ 
+Tests are built and compared with the official NIST known-answer test vectors (KAT).
+ 
+```bash
+make test        # run all tests
+make test-aes    # run AES tests only
+make test-des    # run DES tests only
+```
+ 
 ---
 
 ## References
