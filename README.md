@@ -12,8 +12,8 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 |-----------|--------|-----------|-------|
 | DES | ✅ Complete | 64-bit | ECB, CBC, CTR |
 | AES | ✅ Complete | 128 / 192 / 256-bit | ECB, CBC, CTR |
-| RSA | Planned | — | — |
-| AES-NI | Planned | — | Hardware-accelerated showcase |
+| RSA | Planned | / | / |
+| AES-NI | Planned | / | Hardware-accelerated showcase |
 
 ---
 
@@ -67,25 +67,33 @@ Include `aes_core.h` and initialize a context once per key. The same context can
 ```c
 #include "aes_core.h"
 
-// 1. Define your key as raw bytes
-uint8_t key[32] = {
-    0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
-    0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
-};
+// 1. Define your key and message as raw bytes
+uint8_t key[32] = { /* ... */ };
+uint8_t message[48]  = { /* ... */ };    // you can have multiple blocks of 16 bytes
+uint8_t iv[16] = { /* ... */ };
+uint8_t nonce[16] = { /* ... */ };
+
 
 // 2. Initialize context
 AES_Ctx ctx;
 aes_init(&ctx, key, AES_256);   // AES_128, AES_192, or AES_256
 
 // 3. Encrypt a 16-byte block
-uint8_t message[16]  = { /* ... */ };
 uint8_t cipher[16];
 uint8_t decrypted[16];
 
-aes_encrypt(message, cipher, &ctx);
-aes_decrypt(cipher, decrypted, &ctx);
+// ECB
+aes_ecb_encrypt(message, cipher, 3, &ctx);
+aes_ecb_decrypt(cipher, decrypted, 3, &ctx);
+
+// CBC
+aes_cbc_encrypt(message, cipher, 3, &ctx, iv);
+aes_cbc_decrypt(cipher, decrypted, 3, &ctx, iv);
+
+// CTR
+aes_ctr_encrypt(message, cipher, 3, &ctx, nonce);
+aes_ctr_decrypt(cipher, decrypted, 3, &ctx, nonce);
+
 ```
 
 **Key size options:**
@@ -107,32 +115,32 @@ Include `des_core.h`. DES operates on 64-bit blocks and supports three modes of 
 ```c
 #include "des_core.h"
 
-uint64_t key     = 0x133457799BBCDFF1;
-uint64_t iv      = 0xDEADBEEFCAFEBABE;   // for CBC
-uint64_t nonce   = 0xFEDCBA9876543210;   // for CTR
+uint64_t key     = /* ... */ ;
+uint64_t iv      = /* ... */ ;    // for CBC
+uint64_t nonce   = /* ... */ ;    // for CTR
 
-uint64_t message[3]    = { 0x0123456789ABCDEF, 0xFEDCBA9876543210, 0xAABBCCDDEEFF0011 };
-uint64_t ciphertext[3] = {0};
-uint64_t decrypted[3]  = {0};
+uint64_t message[3]    = { /* ... */ };
+uint64_t cipher[3];
+uint64_t decrypted[3];
 
 // ECB
-des_ecb_encrypt(message, ciphertext, 3, key);
-des_ecb_decrypt(ciphertext, decrypted, 3, key);
+des_ecb_encrypt(message, cipher, 3, key);
+des_ecb_decrypt(cipher, decrypted, 3, key);
 
 // CBC
-des_cbc_encrypt(message, ciphertext, 3, key, iv);
-des_cbc_decrypt(ciphertext, decrypted, 3, key, iv);
+des_cbc_encrypt(message, cipher, 3, key, iv);
+des_cbc_decrypt(cipher, decrypted, 3, key, iv);
 
 // CTR
-des_ctr_encrypt(message, ciphertext, 3, key, nonce);
-des_ctr_decrypt(ciphertext, decrypted, 3, key, nonce);
+des_ctr_encrypt(message, cipher, 3, key, nonce);
+des_ctr_decrypt(cipher, decrypted, 3, key, nonce);
 ```
 
 ### Mode overview
 
 | Mode | IV / Nonce required | Notes |
 |------|-------------------|-------|
-| ECB | No | Each block encrypted independently — not recommended for most use cases |
+| ECB | No | Each block encrypted independently; not recommended for most use cases |
 | CBC | IV (64-bit) | Each block XORed with previous ciphertext before encryption |
 | CTR | Nonce (64-bit) | Turns DES into a stream cipher; encrypt and decrypt use the same function |
 
