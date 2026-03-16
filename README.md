@@ -11,9 +11,9 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 | Algorithm | Status | Key Sizes | Modes |
 |-----------|--------|-----------|-------|
 | DES | ✅ Complete | 64-bit | ECB, CBC, CTR |
-| AES | ✅ Complete | 128 / 192 / 256-bit | ECB (more coming) |
-| RSA | 🔜 Planned | — | — |
-| AES-NI | 🔜 Planned | — | Hardware-accelerated showcase |
+| AES | ✅ Complete | 128 / 192 / 256-bit | ECB, CBC, CTR |
+| RSA | Planned | — | — |
+| AES-NI | Planned | — | Hardware-accelerated showcase |
 
 ---
 
@@ -128,7 +128,7 @@ des_ctr_encrypt(message, ciphertext, 3, key, nonce);
 des_ctr_decrypt(ciphertext, decrypted, 3, key, nonce);
 ```
 
-**Mode overview:**
+### Mode overview
 
 | Mode | IV / Nonce required | Notes |
 |------|-------------------|-------|
