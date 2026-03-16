@@ -267,3 +267,114 @@ void aes_decrypt(const uint8_t in[16], uint8_t out[16], const AES_Ctx *ctx){
     }
 }
 
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+///                         MODES
+///
+
+
+// ECB — Electronic Codebook
+// Every block is encrypted independently with the same key
+//
+void aes_ecb_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx){
+    for (int i = 0; i < num_blocks; i++){
+        aes_encrypt(in+i*16, out+i*16, ctx);
+    }
+}
+
+void aes_ecb_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx){
+    for (int i = 0; i < num_blocks; i++){
+        aes_decrypt(in+i*16, out+i*16, ctx);
+    }
+}
+
+
+
+
+
+// CBC — Cipher Block Chaining
+//
+// Encrypt: ciphertext[i] = DES_enc(plaintext[i] XOR prev_cipher)
+// prev_cipher starts as the IV, then becomes ciphertext[i-1]
+// 
+// Decrypt: plaintext[i] = DES_dec(ciphertext[i]) XOR prev_cipher
+//
+void aes_cbc_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t iv[16]){
+    uint8_t prev[16];
+    memcpy(prev, iv, 16);
+
+    for(int i=0; i<num_blocks; i++){
+        uint8_t block[16];
+        for(int j=0; j<16; j++){
+            block[j] = in[i*16+j] ^ prev[j];   // XOR with previous cipher
+        }
+
+        aes_encrypt(block, out+i*16, ctx);
+        memcpy(prev, out+i*16, 16);
+    }
+}
+
+void aes_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t iv[16]){
+    uint8_t prev[16];
+    memcpy(prev, iv, 16);
+
+    for(int i=0; i<num_blocks; i++){
+        uint8_t block[16];
+        aes_decrypt(in+i*16, block, ctx);
+
+        for(int j=0; j<16; j++){
+            out[i*16+j] = block[j] ^ prev[j];   // XOR with previous cipher
+        }
+
+        memcpy(prev, in+i*16, 16);
+    }
+}
+
+
+
+
+
+// CTR — Counter Mode
+// 
+// Turns DES into a stream cipher:
+// keystream[i] = DES_enc(nonce XOR i)
+// ciphertext[i] = plaintext[i] XOR keystream[i]
+// 
+// Encryption and decryption are identical 
+// No padding needed. Blocks can be processed in parallel
+//
+static void increment_counter(uint8_t counter[16]){
+    for (int i = 15; i >= 0; i--) {
+        if (++counter[i] != 0) break;               
+    }
+}
+static void aes_ctr(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t nonce[16]){
+    uint8_t counter[16], keys[16];
+    memcpy(counter, nonce, 16);
+
+    for (int i = 0; i < num_blocks; i++) {
+       aes_encrypt(counter, keys, ctx);     // encrypt counter to get keys 
+
+       for (int j = 0; j < 16; j++){
+            out[i*16 + j] = in[i*16 + j] ^ keys[j];  // XOR input with keys
+        }
+
+       increment_counter(counter);
+    }
+}
+
+void aes_ctr_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t nonce[16]){
+    aes_ctr(in, out, num_blocks, ctx, nonce);
+}
+
+void aes_ctr_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t nonce[16]){
+    aes_ctr(in, out, num_blocks, ctx, nonce);
+}
+
+
+
+
+

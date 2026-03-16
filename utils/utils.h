@@ -23,6 +23,6 @@ void printAES_word(const uint32_t word);
 
 // Prints the state correctly (in rows not in columns)
 //
-void printAES_state(const char *title, const uint8_t num[16]);
+void printAES_state(const char *title, const uint8_t *num, const size_t num_blocks);
 
 #endif

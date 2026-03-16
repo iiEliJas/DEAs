@@ -5,44 +5,44 @@
 
 
 int main(void) {
+    //////////////////////////////
+    /// key and message
     uint64_t key  = 0x133457799BBCDFF1;
-    uint64_t iv   = 0xDEADBEEFCAFEBABE;   // for CBC
-    uint64_t nonce = 0xFEDCBA9876543210;  // for CTR 
-
+    // -- IV for CBC
+    uint64_t iv   = 0xDEADBEEFCAFEBABE;
+    // Nonce for CTR 
+    uint64_t nonce = 0xFEDCBA9876543210; 
     uint64_t message[3] = {
         0x0123456789ABCDEF,
         0xFEDCBA9876543210,
         0xAABBCCDDEEFF0011
     };
+    uint64_t cipher[3];
+    uint64_t decrypted[3];
 
-    uint64_t ciphertext[3] = {0};
-    uint64_t decrypted[3]  = {0};
-
-    printf("----------------------------------------------\n");
-    printf("  Key: 0x%016llX\n\n", (unsigned long long)key);
+    print_blocks("Key: ", &key, 1);
     print_blocks("Message: ", message, 3);
 
     // -- ECB
     printf("\n--- ECB ---\n");
-    des_ecb_encrypt(message, ciphertext, 3, key);
-    print_blocks("Encrypted", ciphertext, 3);
-    des_ecb_decrypt(ciphertext, decrypted, 3, key);
+    des_ecb_encrypt(message, cipher, 3, key);
+    print_blocks("Encrypted", cipher, 3);
+    des_ecb_decrypt(cipher, decrypted, 3, key);
     print_blocks("Decrypted", decrypted, 3);
 
     // -- CBC
-    printf("\n--- CBC (IV: 0x%016llX) ---\n", (unsigned long long)iv);
-    des_cbc_encrypt(message, ciphertext, 3, key, iv);
-    print_blocks("Encrypted", ciphertext, 3);
-    des_cbc_decrypt(ciphertext, decrypted, 3, key, iv);
+    printf("\n--- CBC ---\n");
+    des_cbc_encrypt(message, cipher, 3, key, iv);
+    print_blocks("Encrypted", cipher, 3);
+    des_cbc_decrypt(cipher, decrypted, 3, key, iv);
     print_blocks("Decrypted", decrypted, 3);
 
     // -- CTR
-    printf("\n--- CTR (nonce: 0x%016llX) ---\n", (unsigned long long)nonce);
-    des_ctr_encrypt(message, ciphertext, 3, key, nonce);
-    print_blocks("Encrypted", ciphertext, 3);
-    des_ctr_decrypt(ciphertext, decrypted, 3, key, nonce);
+    printf("\n--- CTR ---\n");
+    des_ctr_encrypt(message, cipher, 3, key, nonce);
+    print_blocks("Encrypted", cipher, 3);
+    des_ctr_decrypt(cipher, decrypted, 3, key, nonce);
     print_blocks("Decrypted", decrypted, 3);
 
-    printf("\n----------------------------------------------\n");
     return 0;
 }

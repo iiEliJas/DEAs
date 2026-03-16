@@ -56,4 +56,51 @@ void aes_encrypt(const uint8_t in[16], uint8_t out[16], const AES_Ctx *ctx);
 //
 void aes_decrypt(const uint8_t in[16], uint8_t out[16], const AES_Ctx *ctx);
 
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+///                     MODES
+///
+
+
+//ECB — Electronic Codebook
+//Each block is encrypted independently with the same key
+//
+void aes_ecb_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx);
+void aes_ecb_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx);
+
+
+
+//CBC — Cipher Block Chaining
+//Each plaintext block is XORed with the previous ciphertext block before encryption
+//
+void aes_cbc_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t iv[16]);
+void aes_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t iv[16]);
+
+
+
+//CTR — Counter Mode
+//Encrypts a nonce||counter value and XORs the result with plaintext
+//
+void aes_ctr_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t nonce[16]);
+void aes_ctr_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AES_Ctx *ctx, uint8_t nonce[16]);
+
+
+
+
+
+
+
+
+
+
+
+
 #endif
