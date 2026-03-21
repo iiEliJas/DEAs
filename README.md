@@ -18,6 +18,14 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 
 ---
 
+## References
+
+- [FIPS 197 — AES Specification](https://csrc.nist.gov/publications/detail/fips/197/final)
+- [Intel AES-NI WhitePaper](https://www.intel.com/content/dam/doc/white-paper/advanced-encryption-standard-new-instructions-set-paper.pdf)
+- [FIPS 46-3 — DES Specification](https://csrc.nist.gov/pubs/fips/46-3/final)
+  
+---
+
 ## Project Structure
 
 ```
@@ -213,14 +221,6 @@ make test-aes    # run AES tests only
 make test-aesni  # run AESNI tests only
 make test-des    # run DES tests only
 ```
- 
----
-
-## References
-
-- [FIPS 197 — AES Specification](https://csrc.nist.gov/publications/detail/fips/197/final)
-- [Intel AES-NI WhitePaper](https://www.intel.com/content/dam/doc/white-paper/advanced-encryption-standard-new-instructions-set-paper.pdf)
-- [FIPS 46-3 — DES Specification](https://csrc.nist.gov/pubs/fips/46-3/final)
 
 ---
 
