@@ -4,8 +4,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
+///////////////////////////////////////////////////////
+///             DES TOOLS
+
 // Print a 64-bit value as binary
 void printbin(uint64_t num);
+
 
 // Print a block array as hex
 void print_blocks(const char *title, const uint64_t *blocks, size_t num_blocks);

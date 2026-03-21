@@ -13,8 +13,8 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 |-----------|--------|-----------|-------|
 | DES | ✅ Complete | 64-bit | ECB, CBC, CTR |
 | AES | ✅ Complete | 128 / 192 / 256-bit | ECB, CBC, CTR |
+| AES-NI | ✅ Complete | 128 / 256-bit | ECB, CBC, CTR |
 | RSA | Planned | / | / |
-| AES-NI | Planned | / | Hardware-accelerated showcase |
 
 ---
 
@@ -24,15 +24,18 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 DEAs/
 ├── src/
 │   ├── aes_core.c / aes_core.h
+│   ├── aesni_core.c / aesni_core.h
 │   └── des_core.c / des_core.h
 ├── utils/
 │   ├── utils.c
 │   └── utils.h
 ├── demos/
 │   ├── aes_demo.c
+│   ├── aesni_demo.c
 │   └── des_demo.c
 ├── tests/
 │   ├── aes_test.c
+│   ├── aesni_test.c
 │   └── des_test.c
 ├── .github/
 │   └── workflows/
@@ -54,6 +57,9 @@ make
 # Build only AES demo
 make aes
 
+# Build only AESNI demo
+make aesni
+
 # Build only DES demo
 make des
 
@@ -66,6 +72,9 @@ make clean
 ## Usage
 
 ### AES
+> **The software AES implementation is for educational purposes only.** 
+> The lookup tables are vulnerable to cache-timing attacks. An attacker with access to cache timing information can
+> potentially recover the key. Do not use this implementation to encrypt sensitive data. Use AES-NI instead.
 
 Include `aes_core.h` and initialize a context once per key. The same context can then be reused to encrypt as many 16-byte blocks as needed.
 
@@ -112,8 +121,51 @@ aes_ctr_decrypt(cipher, decrypted, 3, &ctx, nonce);
 > **Note:** The state array is column-major, matching the AES spec (FIPS 197). 
 
 ---
+ 
+### AES-NI
+ 
+A hardware-accelerated AES implementation using Intel AES-NI instructions. The encryption and decryption are performed directly in hardware, making it both significantly faster than the software implementation and immune to cache-timing attacks. 
+ 
+**Requirements:** An x86-64 CPU with AES-NI support.  
+ 
+The API is similar to the software AES so the two can be swapped without changing much.
+ 
+```c
+#include "aesni_core.h"
+ 
+// 1. Define your key and message as raw bytes
+uint8_t key[32]     = { /* ... */ };
+uint8_t message[48] = { /* ... */ };    // multiples of 16 bytes
+uint8_t iv[16]      = { /* ... */ };
+uint8_t nonce[16]   = { /* ... */ };
+ 
+// 2. Initialize context
+AESNI_Ctx ctx;
+aesni_init(key, AESNI_256, &ctx);   // AESNI_128 or AESNI_256
+ 
+// 3. Encrypt / decrypt
+uint8_t cipher[48];
+uint8_t decrypted[48];
+ 
+// ECB
+aesni_ecb_encrypt(message, cipher, 3, &ctx);
+aesni_ecb_decrypt(cipher, decrypted, 3, &ctx);
+ 
+// CBC
+aesni_cbc_encrypt(message, cipher, 3, &ctx, iv);
+aesni_cbc_decrypt(cipher, decrypted, 3, &ctx, iv);
+ 
+// CTR
+aesni_ctr_encrypt(message, cipher, 3, &ctx, nonce);
+aesni_ctr_decrypt(cipher, decrypted, 3, &ctx, nonce);
+```
+
+---
 
 ### DES
+
+> **DES can be broken** It is provided here for educational purposes only. 
+> Do not use it to protect sensitive data.
 
 Include `des_core.h`. DES operates on 64-bit blocks and supports three modes of operation.
 
@@ -158,6 +210,7 @@ Tests are built and compared with the official NIST known-answer test vectors (K
 ```bash
 make test        # run all tests
 make test-aes    # run AES tests only
+make test-aesni  # run AESNI tests only
 make test-des    # run DES tests only
 ```
  
@@ -166,6 +219,7 @@ make test-des    # run DES tests only
 ## References
 
 - [FIPS 197 — AES Specification](https://csrc.nist.gov/publications/detail/fips/197/final)
+- [Intel AES-NI WhitePaper](https://www.intel.com/content/dam/doc/white-paper/advanced-encryption-standard-new-instructions-set-paper.pdf)
 - [FIPS 46-3 — DES Specification](https://csrc.nist.gov/pubs/fips/46-3/final)
 
 ---
