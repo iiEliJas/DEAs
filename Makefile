@@ -59,5 +59,7 @@ test-des: $(TEST_DIR)/des_test.c $(SRC_DIR)/des.c $(UTILS_OBJ) | $(BIN_DIR)
 test: test-aes test-aesni test-aesgcm test-des
  
 clean:
-	rm -f aes_demo des_demo test_aes test_des $(UTILS_OBJ) $(TEST_OBJ) $(BIN_DIR)
+	@if exist $(BIN_DIR) rmdir /s /q $(BIN_DIR)
+	@if exist $(UTIL_DIR)\utils.o del /q $(UTIL_DIR)\utils.o
+	@if exist $(TEST_DIR)\test.o del /q $(TEST_DIR)\test.o
  
