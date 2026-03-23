@@ -9,12 +9,12 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 
 ## Algorithms
 
-| Algorithm | Status | Key Sizes | Modes |
-|-----------|--------|-----------|-------|
-| DES | ✅ Complete | 64-bit | ECB, CBC, CTR |
-| AES | ✅ Complete | 128 / 192 / 256-bit | ECB, CBC, CTR |
-| AES-NI | ✅ Complete | 128 / 256-bit | ECB, CBC, CTR |
-| AES256GCM | ✅ Complete | 256-bit | GCM |
+| Algorithm | Key Sizes | Modes |
+|-----------|-----------|-------|
+| DES | 64-bit | ECB, CBC, CTR |
+| AES | 128 / 192 / 256-bit | ECB, CBC, CTR |
+| AES-NI | 128 / 256-bit | ECB, CBC, CTR |
+| AES256GCM | 256-bit | GCM |
 
 ---
 
@@ -32,23 +32,17 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 Requires `gcc` and `make`.
 
 ```bash
-# Build all demos
-make
+make           # Build all demos
 
-# Build AES demo
-make aes
+make aes       # Build AES demo
 
-# Build AESNI demo
-make aesni
+make aesni     # Build AESNI demo
 
-# Build AES256GCM demo
-make aesgcm
+make aesgcm    # Build AES256GCM demo
 
-# Build DES demo
-make des
+make des       # Build DES demo
 
-# Clean build
-make clean
+make clean     # Clean build
 ```
 
 ---
