@@ -1,4 +1,4 @@
-#include "aesni_core.h"
+#include "aesni.h"
 
 
 //////////////////////////////////////////////////////////////////
@@ -26,8 +26,7 @@ static inline __m128i keyassist128(__m128i key, __m128i result){
 
 
 // Assist for key schedule for AESNI-256
-static inline __m128i keyassist256_1(__m128i key, __m128i result)
-{
+static inline __m128i keyassist256_1(__m128i key, __m128i result){
     result = _mm_shuffle_epi32(result, 0xFF);
 
     __m128i tmp = _mm_slli_si128(key, 4);
@@ -41,8 +40,7 @@ static inline __m128i keyassist256_1(__m128i key, __m128i result)
     return _mm_xor_si128(key, result);
 }
  
-static inline __m128i keyassist256_2(__m128i key1, __m128i key2)
-{
+static inline __m128i keyassist256_2(__m128i key1, __m128i key2){
     __m128i result = _mm_aeskeygenassist_si128(key1, 0x00);
     result = _mm_shuffle_epi32(result, 0xAA);
     
@@ -62,8 +60,7 @@ static inline __m128i keyassist256_2(__m128i key1, __m128i key2)
 ///             
 
 
-static void aes128_key_expansion(const uint8_t *key, __m128i *enc_keys)
-{
+static void aes128_key_expansion(const uint8_t *key, __m128i *enc_keys){
     enc_keys[0]  = _mm_loadu_si128((__m128i*)key);
  
     enc_keys[ 1] = keyassist128(enc_keys[ 0], _mm_aeskeygenassist_si128(enc_keys[ 0], 0x01));
@@ -81,8 +78,7 @@ static void aes128_key_expansion(const uint8_t *key, __m128i *enc_keys)
 
 
 
-static void aes256_key_expansion(const uint8_t *key, __m128i *enc_keys)
-{
+static void aes256_key_expansion(const uint8_t *key, __m128i *enc_keys){
     enc_keys[0] = _mm_loadu_si128((__m128i*)key);
     enc_keys[1] = _mm_loadu_si128((__m128i*)(key + 16));
  
@@ -114,25 +110,24 @@ static void aes256_key_expansion(const uint8_t *key, __m128i *enc_keys)
 ///             INIT, ENCRYPT AND DECRYPT
 ///             
 
-void aesni_init(const uint8_t *key, AESNI_KEYSIZE keysize, AESNI_Ctx *ctx)
-{
+void aesni_init(const uint8_t *key, AESNI_KEYSIZE keysize, AESNI_Ctx *ctx){
     ctx->nr = (int)keysize + 6;   // 10, 12, or 14
  
-    switch (keysize) {
+    switch (keysize){
         case AESNI_128: aes128_key_expansion(key, ctx->keys); break;
         case AESNI_256: aes256_key_expansion(key, ctx->keys); break;
     }
 }
  
  
-void aesni_encrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx)
-{
+void aesni_encrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx){
     __m128i block = _mm_loadu_si128((__m128i*)in);
  
     block = _mm_xor_si128(block, ctx->keys[0]);           // AddRoundKey
  
-    for (int i = 1; i < ctx->nr; i++)
+    for (int i = 1; i < ctx->nr; i++){
         block = _mm_aesenc_si128(block, ctx->keys[i]);    // rounds 1 to Nr-1
+    }
  
     block = _mm_aesenclast_si128(block, ctx->keys[ctx->nr]); // final round
  
@@ -140,14 +135,14 @@ void aesni_encrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx)
 }
  
  
-void aesni_decrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx)
-{
+void aesni_decrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx){
     __m128i block = _mm_loadu_si128((__m128i*)in);
  
     block = _mm_xor_si128(block, ctx->keys[ctx->nr]);     // AddRoundKey 
  
-    for (int i = ctx->nr - 1; i > 0; i--)
+    for (int i = ctx->nr - 1; i > 0; i--){
         block = _mm_aesdec_si128(block, _mm_aesimc_si128(ctx->keys[i]));
+    }
  
     block = _mm_aesdeclast_si128(block, ctx->keys[0]);    // final round
  
@@ -164,17 +159,16 @@ void aesni_decrypt(const uint8_t in[16], uint8_t out[16], const AESNI_Ctx *ctx)
 // ECB — Electronic Codebook
 // Every block is encrypted independently with the same key
 //
-void aesni_ecb_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx)
-{
-    for (int i = 0; i < num_blocks; i++)
+void aesni_ecb_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx){
+    for (int i = 0; i < num_blocks; i++){
         aesni_encrypt(in + i*16, out + i*16, ctx);
+    }
 }
  
-void aesni_ecb_decrypt(const uint8_t *in, uint8_t *out,
-                       int num_blocks, const AESNI_Ctx *ctx)
-{
-    for (int i = 0; i < num_blocks; i++)
+void aesni_ecb_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx){
+    for (int i = 0; i < num_blocks; i++){
         aesni_decrypt(in + i*16, out + i*16, ctx);
+    }
 }
  
  
@@ -183,11 +177,10 @@ void aesni_ecb_decrypt(const uint8_t *in, uint8_t *out,
 // Encrypt: cipher[i] = AES_enc(plaintext[i] XOR cipher[i-1]) 
 // Decrypt: plaintext[i]  = AES_dec(cipher[i]) XOR cipher[i-1]
 //
-void aesni_cbc_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t iv[16])
-{
+void aesni_cbc_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t iv[16]){
     __m128i prev = _mm_loadu_si128((__m128i*)iv);
  
-    for (int i = 0; i < num_blocks; i++) {
+    for (int i = 0; i < num_blocks; i++){
         __m128i block = _mm_loadu_si128((__m128i*)(in + i*16));
         block = _mm_xor_si128(block, prev);                   // XOR with prev cipher
  
@@ -201,11 +194,10 @@ void aesni_cbc_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AE
     }
 }
  
-void aesni_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t iv[16])
-{
+void aesni_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t iv[16]){
     __m128i prev = _mm_loadu_si128((__m128i*)iv);
  
-    for (int i = 0; i < num_blocks; i++) {
+    for (int i = 0; i < num_blocks; i++){
         __m128i cipher = _mm_loadu_si128((__m128i*)(in + i*16));
         __m128i block  = cipher;
  
@@ -230,29 +222,28 @@ void aesni_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AE
 // Nonce/counter layout (standard 128-bit):
 //
  
-static inline __m128i ctr_increment(__m128i counter)
-{
+static inline __m128i ctr_increment(__m128i counter){
     uint8_t buf[16];
     _mm_storeu_si128((__m128i*)buf, counter);
  
     // Walk from the last byte backwards
-    for (int i = 15; i >= 0; i--) {
+    for (int i = 15; i >= 0; i--){
         if (++buf[i] != 0) break;
     }
  
     return _mm_loadu_si128((__m128i*)buf);
 }
  
-static void aesni_ctr(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16])
-{
+static void aesni_ctr(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16]){
     __m128i counter = _mm_loadu_si128((__m128i*)nonce);
  
-    for (int i = 0; i < num_blocks; i++) {
+    for (int i = 0; i < num_blocks; i++){
         // Encrypt the counter 
         __m128i ks = counter;
         ks = _mm_xor_si128(ks, ctx->keys[0]);
-        for (int r = 1; r < ctx->nr; r++)
+        for (int r = 1; r < ctx->nr; r++){
             ks = _mm_aesenc_si128(ks, ctx->keys[r]);
+        }
         ks = _mm_aesenclast_si128(ks, ctx->keys[ctx->nr]);
  
         // XOR plaintext or ciphertext with keystream
@@ -263,13 +254,11 @@ static void aesni_ctr(const uint8_t *in, uint8_t *out, int num_blocks, const AES
     }
 }
  
-void aesni_ctr_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16])
-{
+void aesni_ctr_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16]){
     aesni_ctr(in, out, num_blocks, ctx, nonce);
 }
  
-void aesni_ctr_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16])
-{
+void aesni_ctr_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16]){
     aesni_ctr(in, out, num_blocks, ctx, nonce);
 }
 

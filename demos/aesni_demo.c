@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "aesni_core.h"
+#include "aesni.h"
 #include "../utils/utils.h"
 
 

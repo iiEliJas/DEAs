@@ -8,24 +8,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include "../src/aesni_core.h"
-#include "../src/aes_core.h"
+#include "../src/aesni.h"
 #include "../utils/utils.h"
+#include "test.h"
 
-
-static int tests_run    = 0;
-static int tests_passed = 0;
-
-static void pass(const char *name) {
-    tests_passed++;
-    tests_run++;
-    printf("  [PASS] %s\n", name);
-}
-
-static void fail(const char *name, const char *msg) {
-    tests_run++;
-    printf("  [FAIL] %s — %s\n", name, msg);
-}
 
 //////////////////////////////////////////////////////////////////////
 // VECTORS
@@ -66,8 +52,7 @@ static const uint8_t KAT_256_CT[16] = {
 //////////////////////////////////////////////////////////////////////
 // ECB KAT
 
-static void test_aesni128_ecb_kat()
-{
+static void test_aesni128_ecb_kat(){
     AESNI_Ctx ctx;
     uint8_t ct[16], pt[16];
 
@@ -75,21 +60,20 @@ static void test_aesni128_ecb_kat()
     aesni_encrypt(KAT_128_PT, ct, &ctx);
     aesni_decrypt(ct, pt, &ctx);
 
-    if (memcmp(ct, KAT_128_CT, 16) != 0) {
+    if (memcmp(ct, KAT_128_CT, 16) != 0){
         printAES_state("expected", KAT_128_CT, 1);
-        printAES_state("got",      ct,         1);
+        printAES_state("got", ct, 1);
         fail(__func__, "AES-NI-128 ECB encryption fail");
         return;
     }
-    if (memcmp(pt, KAT_128_PT, 16) != 0) {
+    if (memcmp(pt, KAT_128_PT, 16) != 0){
         fail(__func__, "AES-NI-128 ECB decryption fail");
         return;
     }
     pass(__func__);
 }
 
-static void test_aesni256_ecb_kat()
-{
+static void test_aesni256_ecb_kat(){
     AESNI_Ctx ctx;
     uint8_t ct[16], pt[16];
 
@@ -97,13 +81,13 @@ static void test_aesni256_ecb_kat()
     aesni_encrypt(KAT_256_PT, ct, &ctx);
     aesni_decrypt(ct, pt, &ctx);
 
-    if (memcmp(ct, KAT_256_CT, 16) != 0) {
+    if (memcmp(ct, KAT_256_CT, 16) != 0){
         printAES_state("expected", KAT_256_CT, 1);
-        printAES_state("got",      ct,         1);
+        printAES_state("got", ct, 1);
         fail(__func__, "AES-NI-256 ECB encryption fail");
         return;
     }
-    if (memcmp(pt, KAT_256_PT, 16) != 0) {
+    if (memcmp(pt, KAT_256_PT, 16) != 0){
         fail(__func__, "AES-NI-256 ECB decryption fail");
         return;
     }
@@ -113,8 +97,7 @@ static void test_aesni256_ecb_kat()
 //////////////////////////////////////////////////////////////////////
 // CBC roundtrip
 
-static void test_aesni_cbc_roundtrip()
-{
+static void test_aesni_cbc_roundtrip(){
     AESNI_Ctx ctx;
     aesni_init(KAT_256_KEY, AESNI_256, &ctx);
 
@@ -132,10 +115,10 @@ static void test_aesni_cbc_roundtrip()
     };
     uint8_t ct[48], result[48];
 
-    aesni_cbc_encrypt(pt, ct,     3, &ctx, iv);
+    aesni_cbc_encrypt(pt, ct, 3, &ctx, iv);
     aesni_cbc_decrypt(ct, result, 3, &ctx, iv);
 
-    if (memcmp(result, pt, 48) != 0) {
+    if (memcmp(result, pt, 48) != 0){
         fail(__func__, "AES-NI-256 CBC roundtrip fail");
         return;
     }
@@ -145,8 +128,7 @@ static void test_aesni_cbc_roundtrip()
 //////////////////////////////////////////////////////////////////////
 // CTR roundtrip
 
-static void test_aesni_ctr_roundtrip()
-{
+static void test_aesni_ctr_roundtrip(){
     AESNI_Ctx ctx;
     aesni_init(KAT_128_KEY, AESNI_128, &ctx);
 
@@ -162,10 +144,10 @@ static void test_aesni_ctr_roundtrip()
     };
     uint8_t ct[32], result[32];
 
-    aesni_ctr_encrypt(pt, ct,     2, &ctx, nonce);
+    aesni_ctr_encrypt(pt, ct, 2, &ctx, nonce);
     aesni_ctr_decrypt(ct, result, 2, &ctx, nonce);
 
-    if (memcmp(result, pt, 32) != 0) {
+    if (memcmp(result, pt, 32) != 0){
         fail(__func__, "AES-NI-128 CTR roundtrip fail");
         return;
     }
@@ -176,8 +158,7 @@ static void test_aesni_ctr_roundtrip()
 //////////////////////////////////////////////////////////////////////
 // main
 
-int main(void)
-{
+int main(void){
     printf("--- AES-NI Tests ---\n");
 
     printf("\n--- ECB Known-Answer Tests (FIPS 197) ---\n");

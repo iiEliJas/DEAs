@@ -5,13 +5,13 @@
 #include <string.h>
 #include <wmmintrin.h>
 
-typedef enum {
+typedef enum{
         AESNI_128 = 4,
         AESNI_256 = 8
 } AESNI_KEYSIZE;
 
 
-typedef struct {
+typedef struct{
         __m128i keys[15];      // round keys
         int nr;               // number of rounds (10,12,14)
 } AESNI_Ctx;
@@ -72,5 +72,6 @@ void aesni_cbc_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AE
 //
 void aesni_ctr_encrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16]);
 void aesni_ctr_decrypt(const uint8_t *in, uint8_t *out, int num_blocks, const AESNI_Ctx *ctx, const uint8_t nonce[16]);
+
 
 #endif  //AESNI_CORE

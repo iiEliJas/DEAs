@@ -8,23 +8,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include "../src/aes_core.h"
+#include "../src/aes.h"
 #include "../utils/utils.h"
+#include "test.h"
 
-
-static int tests_run    = 0;
-static int tests_passed = 0;
-
-static void pass(const char *name) {
-    tests_passed++;
-    tests_run++;
-    printf("  [PASS] %s\n", name);
-}
-
-static void fail(const char *name, const char *msg) {
-    tests_run++;
-    printf("  [FAIL] %s — %s\n", name, msg);
-}
 
 //////////////////////////////////////////////////////////////////////
 // VECTORS
@@ -80,8 +67,7 @@ static const uint8_t KAT_256_CT[16] = {
 //////////////////////////////////////////////////////////////////////
 // ECB KAT
 
-static void test_aes128_ecb_kat()
-{
+static void test_aes128_ecb_kat(){
     AES_Ctx ctx;
     uint8_t ct[16], pt[16];
 
@@ -89,21 +75,20 @@ static void test_aes128_ecb_kat()
     aes_encrypt(KAT_128_PT, ct, &ctx);
     aes_decrypt(ct, pt, &ctx);
 
-    if (memcmp(ct, KAT_128_CT, 16) != 0) {
+    if (memcmp(ct, KAT_128_CT, 16) != 0){
         printAES_state("expected", KAT_128_CT, 1);
         printAES_state("got",      ct,         1);
         fail(__func__, "AES-128 ECB encryption fail");
         return;
     }
-    if (memcmp(pt, KAT_128_PT, 16) != 0) {
+    if (memcmp(pt, KAT_128_PT, 16) != 0){
         fail(__func__, "AES-128 ECB decryption fail");
         return;
     }
     pass(__func__);
 }
 
-static void test_aes192_ecb_kat()
-{
+static void test_aes192_ecb_kat(){
     AES_Ctx ctx;
     uint8_t ct[16], pt[16];
 
@@ -111,21 +96,20 @@ static void test_aes192_ecb_kat()
     aes_encrypt(KAT_192_PT, ct, &ctx);
     aes_decrypt(ct, pt, &ctx);
 
-    if (memcmp(ct, KAT_192_CT, 16) != 0) {
+    if (memcmp(ct, KAT_192_CT, 16) != 0){
         printAES_state("expected", KAT_192_CT, 1);
         printAES_state("got",      ct,         1);
         fail(__func__, "AES-192 ECB encryption fail");
         return;
     }
-    if (memcmp(pt, KAT_192_PT, 16) != 0) {
+    if (memcmp(pt, KAT_192_PT, 16) != 0){
         fail(__func__, "AES-192 ECB decryption fail");
         return;
     }
     pass(__func__);
 }
 
-static void test_aes256_ecb_kat()
-{
+static void test_aes256_ecb_kat(){
     AES_Ctx ctx;
     uint8_t ct[16], pt[16];
 
@@ -133,13 +117,13 @@ static void test_aes256_ecb_kat()
     aes_encrypt(KAT_256_PT, ct, &ctx);
     aes_decrypt(ct, pt, &ctx);
 
-    if (memcmp(ct, KAT_256_CT, 16) != 0) {
+    if (memcmp(ct, KAT_256_CT, 16) != 0){
         printAES_state("expected", KAT_256_CT, 1);
         printAES_state("got",      ct,         1);
         fail(__func__, "AES-256 ECB encryption fail");
         return;
     }
-    if (memcmp(pt, KAT_256_PT, 16) != 0) {
+    if (memcmp(pt, KAT_256_PT, 16) != 0){
         fail(__func__, "AES-256 ECB decryption fail");
         return;
     }
@@ -149,8 +133,7 @@ static void test_aes256_ecb_kat()
 //////////////////////////////////////////////////////////////////////
 // CBC roundtrip
 
-static void test_aes_cbc_roundtrip()
-{
+static void test_aes_cbc_roundtrip(){
     AES_Ctx ctx;
     aes_init(KAT_256_KEY, AES_256, &ctx);
 
@@ -171,7 +154,7 @@ static void test_aes_cbc_roundtrip()
     aes_cbc_encrypt(pt, ct,     3, &ctx, iv);
     aes_cbc_decrypt(ct, result, 3, &ctx, iv);
 
-    if (memcmp(result, pt, 48) != 0) {
+    if (memcmp(result, pt, 48) != 0){
         fail(__func__, "AES-256 CBC roundtrip fail");
         return;
     }
@@ -181,8 +164,7 @@ static void test_aes_cbc_roundtrip()
 //////////////////////////////////////////////////////////////////////
 // CTR roundtrip
 
-static void test_aes_ctr_roundtrip()
-{
+static void test_aes_ctr_roundtrip(){
     AES_Ctx ctx;
     aes_init(KAT_128_KEY, AES_128, &ctx);
 
@@ -201,7 +183,7 @@ static void test_aes_ctr_roundtrip()
     aes_ctr_encrypt(pt, ct,     2, &ctx, nonce);
     aes_ctr_decrypt(ct, result, 2, &ctx, nonce);
 
-    if (memcmp(result, pt, 32) != 0) {
+    if (memcmp(result, pt, 32) != 0){
         fail(__func__,"AES-128 CTR roundtrip fail");
         return;
     }
@@ -211,8 +193,7 @@ static void test_aes_ctr_roundtrip()
 //////////////////////////////////////////////////////////////////////
 // main
 
-int main(void)
-{
+int main(void){
     printf("--- AES Tests ---\n");
 
     printf("\n--- ECB Known-Answer Tests (FIPS 197) ---\n");
