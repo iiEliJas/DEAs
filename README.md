@@ -1,6 +1,6 @@
-# DEAs — Data Encryption Algorithms
+# DEAs - Data Encryption Algorithms
 
-A clean, from-scratch implementation of classic and modern encryption algorithms in C. Built without external libraries — every algorithm is implemented directly from the official specifications.
+A clean, from-scratch implementation of classic and modern encryption algorithms in C. Built without external libraries - every algorithm is implemented directly from the official specifications.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![C](https://img.shields.io/badge/language-C-00599C?logo=c)
@@ -14,7 +14,7 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 | DES | ✅ Complete | 64-bit | ECB, CBC, CTR |
 | AES | ✅ Complete | 128 / 192 / 256-bit | ECB, CBC, CTR |
 | AES-NI | ✅ Complete | 128 / 256-bit | ECB, CBC, CTR |
-| RSA | Planned | / | / |
+| AES256GCM | ✅ Complete | 256-bit | GCM |
 
 ---
 
@@ -22,36 +22,9 @@ A clean, from-scratch implementation of classic and modern encryption algorithms
 
 - [FIPS 197 — AES Specification](https://csrc.nist.gov/publications/detail/fips/197/final)
 - [Intel AES-NI WhitePaper](https://www.intel.com/content/dam/doc/white-paper/advanced-encryption-standard-new-instructions-set-paper.pdf)
+- [NIST SP 800-38D - GCM](https://csrc.nist.gov/pubs/sp/800/38/d/final)
 - [FIPS 46-3 — DES Specification](https://csrc.nist.gov/pubs/fips/46-3/final)
   
----
-
-## Project Structure
-
-```
-DEAs/
-├── src/
-│   ├── aes_core.c / aes_core.h
-│   ├── aesni_core.c / aesni_core.h
-│   └── des_core.c / des_core.h
-├── utils/
-│   ├── utils.c
-│   └── utils.h
-├── demos/
-│   ├── aes_demo.c
-│   ├── aesni_demo.c
-│   └── des_demo.c
-├── tests/
-│   ├── aes_test.c
-│   ├── aesni_test.c
-│   └── des_test.c
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── Makefile
-└── README.md
-```
-
 ---
 
 ## Building
@@ -59,16 +32,19 @@ DEAs/
 Requires `gcc` and `make`.
 
 ```bash
-# Build both demos
+# Build all demos
 make
 
-# Build only AES demo
+# Build AES demo
 make aes
 
-# Build only AESNI demo
+# Build AESNI demo
 make aesni
 
-# Build only DES demo
+# Build AES256GCM demo
+make aesgcm
+
+# Build DES demo
 make des
 
 # Clean build
@@ -170,9 +146,39 @@ aesni_ctr_decrypt(cipher, decrypted, 3, &ctx, nonce);
 
 ---
 
+### AES256-GCM
+
+An implementation of the Galois Counter Mode (GCM), providing both high-speed encryption and data authenticity (AEAD)
+ 
+**Requirements:** An x86-64 CPU with AES-NI support.  
+ 
+```c
+#include "aesni_core.h"
+#include <string.h>
+ 
+// Define your key and message as raw bytes
+uint8_t key[32]     = { /* ... */ };
+uint8_t message[48] = { /* ... */ };
+uint8_t iv[12]      = { /* ... */ };
+const char *aad = "...";
+ 
+uint8_t cipher[48];
+uint8_t tag[16];
+uint8_t decrypted[48];
+
+// 2. Encrypt and generate tag
+aes256gcm_encrypt(message, 48, (uint8_t*)aad, strlen(aad), key, iv, cipher, tag);
+
+// 3. Decrypt and verify tag
+// Returns 0 on success, non-zero if the tag doesn't match
+int result = aes256gcm_decrypt(cipher, 48, (uint8_t*)aad, strlen(aad), key, iv, tag, decrypted);
+```
+
+---
+
 ### DES
 
-> **DES can be broken** It is provided here for educational purposes only. 
+> **DES can be broken.** It is provided here for educational purposes only. 
 > Do not use it to protect sensitive data.
 
 Include `des_core.h`. DES operates on 64-bit blocks and supports three modes of operation.
@@ -180,11 +186,11 @@ Include `des_core.h`. DES operates on 64-bit blocks and supports three modes of 
 ```c
 #include "des_core.h"
 
-uint64_t key     = /* ... */ ;
-uint64_t iv      = /* ... */ ;    // for CBC
-uint64_t nonce   = /* ... */ ;    // for CTR
+uint64_t key   = /* ... */ ;
+uint64_t iv    = /* ... */ ;    // for CBC
+uint64_t nonce = /* ... */ ;    // for CTR
 
-uint64_t message[3]    = { /* ... */ };
+uint64_t message[3] = { /* ... */ };
 uint64_t cipher[3];
 uint64_t decrypted[3];
 
@@ -217,9 +223,10 @@ Tests are built and compared with the official NIST known-answer test vectors (K
  
 ```bash
 make test        # run all tests
-make test-aes    # run AES tests only
-make test-aesni  # run AESNI tests only
-make test-des    # run DES tests only
+make test-aes    # run AES tests 
+make test-aesni  # run AESNI tests 
+make test-aesgcm # run AES256GCM tests
+make test-des    # run DES tests 
 ```
 
 ---
